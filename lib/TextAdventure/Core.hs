@@ -4,6 +4,8 @@ module TextAdventure.Core (
     TurnOutcome (..),
     Game (..),
     Store (..),
+    installGame,
+    runTurn,
 )
 where
 
@@ -38,3 +40,32 @@ data Store io query transaction schema = Store
     , atomically :: forall a. transaction a -> io a
     , queryInside :: forall a. query a -> transaction a
     }
+
+-- | Install a game's schema and seed data in a store.
+installGame :: Store io query transaction schema -> Game schema query transaction command event parseFailure rejection output -> io ()
+installGame store game = install store (ontology game)
+
+{- | Run one complete turn in a single store transaction.
+
+Accepted events are applied before the outcome is described, so descriptions
+observe the resulting world state. If any operation raises an exception, the
+store's transaction runner determines the rollback behavior.
+-}
+runTurn ::
+    (Monad transaction) =>
+    Store io query transaction schema ->
+    Game schema query transaction command event parseFailure rejection output ->
+    RawInput ->
+    io output
+runTurn store game rawInput =
+    atomically store $ do
+        parsed <- queryInside store (parse game rawInput)
+        case parsed of
+            Left parseFailure ->
+                queryInside store (describe game (ParseFailed parseFailure))
+            Right command -> do
+                decision <- queryInside store (decide game command)
+                case decision of
+                    Rejected _ -> pure ()
+                    Accepted events -> mapM_ (apply game) events
+                queryInside store (describe game (Handled command decision))

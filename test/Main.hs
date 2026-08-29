@@ -3,11 +3,15 @@ module Main (main) where
 import Data.Functor.Identity (Identity (..))
 import Data.Text (Text)
 import Data.Text qualified as Text
+import EngineSpec qualified
+import MinimalSpec qualified
 import PersistentStoreSpec qualified
 import TextAdventure
 
 main :: IO ()
 main = do
+    EngineSpec.run
+    MinimalSpec.run
     coreTypesCanBeConstructed
     handledZeroEventCommandsRetainIntent
     PersistentStoreSpec.run
