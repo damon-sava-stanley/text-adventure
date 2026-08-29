@@ -1,7 +1,8 @@
 module TextAdventure (
-    greeting,
+    module TextAdventure.Core,
+    module TextAdventure.Ontology,
 )
 where
 
-greeting :: String
-greeting = "Hello, world!"
+import TextAdventure.Core
+import TextAdventure.Ontology
