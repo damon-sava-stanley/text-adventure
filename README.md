@@ -13,7 +13,10 @@ generic turn pipeline and store boundary in `TextAdventure.Core`, plus a
 Persistent ontology and SQLite adapter in `TextAdventure.Ontology` and
 `TextAdventure.Store.Persistent`. `TextAdventure` re-exports these modules as a
 convenient public entry point. Runtime turn behavior has not been implemented
-yet.
+yet. A handled `TurnOutcome` retains both the canonical parsed command and its
+accepted or rejected decision, allowing `Game.describe` to respond to player
+intent even when the decision produces no events. Parse failures remain
+separate and do not carry a command.
 
 Persistent supplies generated records, typed `Key entity` identifiers, schema
 migrations, and CRUD queries. Esqueleto is included for richer relational

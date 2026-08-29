@@ -84,9 +84,9 @@ data Decision rejection event
   = Rejected rejection
   | Accepted [event]
 
-data TurnOutcome parseFailure rejection event
+data TurnOutcome parseFailure command rejection event
   = ParseFailed parseFailure
-  | Handled (Decision rejection event)
+  | Handled command (Decision rejection event)
 
 data Game schema query transaction command event
           parseFailure rejection output =
@@ -98,7 +98,7 @@ data Game schema query transaction command event
                 -> query (Decision rejection event)
     , apply     :: event
                 -> transaction ()
-    , describe  :: TurnOutcome parseFailure rejection event
+    , describe  :: TurnOutcome parseFailure command rejection event
                 -> query output
     }
 ```
@@ -177,4 +177,3 @@ relational queries when Persistent's CRUD API is insufficient.
 Persistent's automatic schema diff is an early-development convenience, not a
 complete durable-save strategy. Released games will need explicit, ordered
 schema and data migrations for every supported save version.
-

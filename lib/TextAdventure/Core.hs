@@ -15,16 +15,22 @@ data Decision rejection event
     = Rejected rejection
     | Accepted [event]
 
-data TurnOutcome parseFailure rejection event
+{- | The result of interpreting one raw input.
+
+Parsed commands are retained for both accepted and rejected decisions so a
+describer can respond to the interpreted player intent. Parse failures have
+no canonical command to retain.
+-}
+data TurnOutcome parseFailure command rejection event
     = ParseFailed parseFailure
-    | Handled (Decision rejection event)
+    | Handled command (Decision rejection event)
 
 data Game schema query transaction command event parseFailure rejection output = Game
     { ontology :: schema
     , parse :: RawInput -> query (Either parseFailure command)
     , decide :: command -> query (Decision rejection event)
     , apply :: event -> transaction ()
-    , describe :: TurnOutcome parseFailure rejection event -> query output
+    , describe :: TurnOutcome parseFailure command rejection event -> query output
     }
 
 data Store io query transaction schema = Store
