@@ -25,6 +25,7 @@
               cabal-install
               fourmolu
               ghc
+              go-task
               haskell-language-server
               hlint
             ];

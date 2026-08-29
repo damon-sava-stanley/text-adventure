@@ -1,0 +1,27 @@
+version: "3"
+
+tasks:
+  build:
+    desc: Build all project components
+    cmds:
+      - cabal build all
+
+  run:
+    desc: Run the text adventure executable
+    cmds:
+      - cabal run text-adventure
+
+  test:
+    desc: Run all tests
+    cmds:
+      - cabal test all
+
+  lint:
+    desc: Lint all Haskell source files
+    cmds:
+      - hlint app lib test
+
+  format:
+    desc: Format all Haskell source files
+    cmds:
+      - fourmolu --mode inplace app lib test
