@@ -12,16 +12,20 @@ The library currently defines the foundational structure of that design: the
 generic turn pipeline and store boundary in `TextAdventure.Core`, plus a
 Persistent ontology and SQLite adapter in `TextAdventure.Ontology` and
 `TextAdventure.Store.Persistent`. `TextAdventure` re-exports these modules as a
-convenient public entry point. Runtime turn behavior has not been implemented
-yet. A handled `TurnOutcome` retains both the canonical parsed command and its
-accepted or rejected decision, allowing `Game.describe` to respond to player
-intent even when the decision produces no events. Parse failures remain
+convenient public entry point. The public `installGame` and `runTurn` operations
+install a game's ontology and execute its complete turn pipeline in a store
+transaction. A handled `TurnOutcome` retains both the canonical parsed command
+and its accepted or rejected decision, allowing `Game.describe` to respond to
+player intent even when the decision produces no events. Parse failures remain
 separate and do not carry a command.
 
 Persistent supplies generated records, typed `Key entity` identifiers, schema
 migrations, and CRUD queries. Esqueleto is included for richer relational
 queries. The rationale and save-migration caveat are recorded in
 [`ADR 0001`](docs/decisions/0001-use-persistent.md).
+
+A playable SQLite-backed game is available in the [examples](examples)
+directory.
 
 ## Development
 
@@ -46,6 +50,7 @@ task format
 
 - `lib/` — library source
 - `app/` — executable source
+- `examples/` — playable examples
 - `test/` — test source
 - `notes/` — design notes
 - `docs/decisions/` — accepted architectural decisions

@@ -19,9 +19,9 @@ tasks:
   lint:
     desc: Lint all Haskell source files
     cmds:
-      - hlint app lib test
+      - hlint app examples lib test
 
   format:
     desc: Format all Haskell source files
     cmds:
-      - fourmolu --mode inplace app lib test
+      - fourmolu --mode inplace app examples lib test
