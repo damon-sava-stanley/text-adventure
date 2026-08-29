@@ -135,65 +135,46 @@ families may later provide a less verbose type-level namespace for all the
 types belonging to a particular game, but they need not be the primary
 extension mechanism.
 
-## A Typed Ontology
+## A Persistent Ontology
 
-The common ontology DSL does have to know enough about a value to turn it
-into SQLite DDL and initial rows. GADTs let us keep that evidence local to
-the schema instead of imposing it on the rest of the game:
+The common ontology needs keys, references, constraints, migrations, codecs,
+and an expressive query layer. Rather than grow and maintain all of those
+features in a custom DSL, the toolkit uses Persistent with its SQLite backend.
+Game entities are declared using Persistent's schema syntax:
 
 ```haskell
-data SqlType a where
-  SqlInt      :: SqlType Int64
-  SqlText     :: SqlType Text
-  SqlBool     :: SqlType Bool
-  SqlNullable :: SqlType a -> SqlType (Maybe a)
+share [mkPersist sqlSettings, mkEntityDefList "worldModels"] [persistLowerCase|
+Room
+    name Text
+    UniqueRoomName name
 
-data Column row where
-  Column
-    :: Text
-    -> SqlType field
-    -> (row -> field)
-    -> Column row
+Thing
+    name Text
+    room RoomId Maybe
+    portable Bool
+|]
 
-data Table row =
-  Table
-    { tableName :: Text
-    , columns   :: [Column row]
+worldOntology :: Ontology
+worldOntology =
+  Ontology
+    { ontologyMigration = migrateModels worldModels
+    , ontologySeed = seedWorld
     }
-
-data SomeTable where
-  SomeTable :: Table row -> [row] -> SomeTable
-
-newtype Ontology = Ontology [SomeTable]
 ```
 
-`SomeTable` existentially hides each table's row type, but the `Table`
-inside it retains the information necessary to create the table and encode
-its seed rows. An ontology can therefore contain unrelated, game-specific
-row types without requiring the engine to define a universal `Room`,
-`Object`, or `Entity` type.
+The generated `Key Room` and `Key Thing` types prevent identifiers from being
+mixed accidentally. Generated entity metadata can be combined across modules,
+so game-specific row types remain extensible without a universal `Room`,
+`Object`, or `Entity` type in the engine.
 
-A real version will also need keys, references, uniqueness and check
-constraints, migrations, and probably an escape hatch for raw SQLite.
-Deriving codecs with `Generic` or `DerivingVia` can be a convenience rather
-than a requirement of the framework.
+The seed action is part of installation and must be idempotent. The SQLite
+adapter runs it with the migration in one transaction, enables foreign-key
+checks and write-ahead logging, and rolls transactions back when exceptions
+escape. Persistent's read-only and read/write backend types retain the generic
+core's query/transaction distinction. Esqueleto supplies joins and richer
+relational queries when Persistent's CRUD API is insufficient.
 
-Typed identifiers are another small useful building block:
-
-```haskell
-newtype Id entity = Id Int64
-
-data Room
-data Object
-
-type RoomId   = Id Room
-type ObjectId = Id Object
-```
-
-This prevents accidentally using an object identifier where a room
-identifier is expected while making no claims about the changing facts of
-the world. Stable structural distinctions belong in Haskell's types;
-facts such as whether a particular door is currently locked belong in the
-database.
-
+Persistent's automatic schema diff is an early-development convenience, not a
+complete durable-save strategy. Released games will need explicit, ordered
+schema and data migrations for every supported save version.
 

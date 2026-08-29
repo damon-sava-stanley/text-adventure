@@ -1,33 +1,21 @@
 module TextAdventure.Ontology (
-    SqlType (..),
-    Column (..),
-    Table (..),
-    SomeTable (..),
     Ontology (..),
-    Id (..),
+    Key,
 )
 where
 
-import Data.Int (Int64)
-import Data.Text (Text)
+import Control.Monad.IO.Class (MonadIO)
+import Control.Monad.Trans.Reader (ReaderT)
+import Database.Persist (Key)
+import Database.Persist.Sql (Migration, SqlWriteBackend)
 
-data SqlType a where
-    SqlInt :: SqlType Int64
-    SqlText :: SqlType Text
-    SqlBool :: SqlType Bool
-    SqlNullable :: SqlType a -> SqlType (Maybe a)
+{- | The database setup supplied by a game.
 
-data Column row where
-    Column :: Text -> SqlType field -> (row -> field) -> Column row
-
-data Table row = Table
-    { tableName :: Text
-    , columns :: [Column row]
+Persistent generates the migration from the game's entity definitions. The
+seed action runs in the same transaction and should be idempotent so that an
+existing world can be installed again safely.
+-}
+data Ontology = Ontology
+    { ontologyMigration :: Migration
+    , ontologySeed :: forall m. (MonadIO m) => ReaderT SqlWriteBackend m ()
     }
-
-data SomeTable where
-    SomeTable :: Table row -> [row] -> SomeTable
-
-newtype Ontology = Ontology [SomeTable]
-
-newtype Id entity = Id Int64

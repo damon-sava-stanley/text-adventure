@@ -9,10 +9,16 @@ world state and save format. The early design notes live in
 [`notes/rough_thoughts.md`](notes/rough_thoughts.md).
 
 The library currently defines the foundational structure of that design: the
-generic turn pipeline and store boundary in `TextAdventure.Core`, plus the typed
-schema vocabulary in `TextAdventure.Ontology`. `TextAdventure` re-exports both
-modules as a convenient public entry point. Runtime engine behavior and SQLite
-integration have not been implemented yet.
+generic turn pipeline and store boundary in `TextAdventure.Core`, plus a
+Persistent ontology and SQLite adapter in `TextAdventure.Ontology` and
+`TextAdventure.Store.Persistent`. `TextAdventure` re-exports these modules as a
+convenient public entry point. Runtime turn behavior has not been implemented
+yet.
+
+Persistent supplies generated records, typed `Key entity` identifiers, schema
+migrations, and CRUD queries. Esqueleto is included for richer relational
+queries. The rationale and save-migration caveat are recorded in
+[`ADR 0001`](docs/decisions/0001-use-persistent.md).
 
 ## Development
 
@@ -39,3 +45,4 @@ task format
 - `app/` — executable source
 - `test/` — test source
 - `notes/` — design notes
+- `docs/decisions/` — accepted architectural decisions

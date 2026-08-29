@@ -18,16 +18,27 @@
         system:
         let
           pkgs = import nixpkgs { inherit system; };
+          ghcWithDependencies = pkgs.haskellPackages.ghcWithPackages (
+            haskellPackages: with haskellPackages; [
+              esqueleto
+              persistent
+              persistent-sqlite
+              temporary
+            ]
+          );
         in
         {
           default = pkgs.mkShell {
             packages = with pkgs; [
               cabal-install
               fourmolu
-              ghc
+              ghcWithDependencies
               go-task
               haskell-language-server
               hlint
+              pkg-config
+              sqlite
+              zlib
             ];
           };
         }

@@ -3,12 +3,13 @@ module Main (main) where
 import Data.Functor.Identity (Identity (..))
 import Data.Text (Text)
 import Data.Text qualified as Text
+import PersistentStoreSpec qualified
 import TextAdventure
 
 main :: IO ()
 main = do
     coreTypesCanBeConstructed
-    ontologyTypesCanBeConstructed
+    PersistentStoreSpec.run
 
 coreTypesCanBeConstructed :: IO ()
 coreTypesCanBeConstructed = do
@@ -25,13 +26,6 @@ coreTypesCanBeConstructed = do
     assert "parse failures are distinct from handled turns" (isParseFailure parsed && not (isParseFailure handled))
     assert "game parsers can be consumed" (runIdentity (parse game input) == Right (Text.pack "take toaster"))
     assert "stores execute polymorphic transactions" (runIdentity (atomically store (Identity 42)) == (42 :: Int))
-
-ontologyTypesCanBeConstructed :: IO ()
-ontologyTypesCanBeConstructed = do
-    let Ontology tables = exampleOntology
-    assert "an ontology combines unrelated row types" (length tables == 2)
-    assert "existential tables retain their schema and seeds" (all hasOneSeed tables)
-    assert "SQL types retain field evidence" (sqlTypeName (SqlNullable SqlText) == "nullable text")
 
 exampleGame :: Game () Identity Identity Text Text Text Text Text
 exampleGame =
@@ -50,51 +44,6 @@ identityStore =
         , atomically = id
         , queryInside = id
         }
-
-data Room
-
-data Object
-
-data RoomRow = RoomRow (Id Room) Text
-
-data ObjectRow = ObjectRow (Id Object) Bool
-
-exampleOntology :: Ontology
-exampleOntology =
-    Ontology
-        [ SomeTable
-            ( Table
-                { tableName = Text.pack "rooms"
-                , columns =
-                    [ Column (Text.pack "id") SqlInt (\(RoomRow (Id identifier) _) -> identifier)
-                    , Column (Text.pack "name") SqlText (\(RoomRow _ name) -> name)
-                    ]
-                }
-            )
-            [RoomRow (Id 1) (Text.pack "Kitchen")]
-        , SomeTable
-            ( Table
-                { tableName = Text.pack "objects"
-                , columns =
-                    [ Column (Text.pack "id") SqlInt (\(ObjectRow (Id identifier) _) -> identifier)
-                    , Column (Text.pack "portable") SqlBool (\(ObjectRow _ portable) -> portable)
-                    ]
-                }
-            )
-            [ObjectRow (Id 1) True]
-        ]
-
-hasOneSeed :: SomeTable -> Bool
-hasOneSeed (SomeTable table seeds) =
-    not (Text.null (tableName table))
-        && not (null (columns table))
-        && length seeds == 1
-
-sqlTypeName :: SqlType a -> String
-sqlTypeName SqlInt = "integer"
-sqlTypeName SqlText = "text"
-sqlTypeName SqlBool = "boolean"
-sqlTypeName (SqlNullable sqlType) = "nullable " <> sqlTypeName sqlType
 
 rawInputText :: RawInput -> Text
 rawInputText (RawInput input) = input
