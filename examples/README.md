@@ -15,7 +15,8 @@ cabal run text-adventure-example-minimal -- ./minimal.sqlite
 ```
 
 The same database can be reused across runs; the Toaster remains carried after
-the process exits. Use a new database path to start with a fresh world.
+the process exits. Use a new database path to start with a fresh world. Passing
+`:memory:` instead keeps an ephemeral world alive for the duration of that run.
 
 ```console
 $ cabal run text-adventure-example-minimal -- ./minimal.sqlite

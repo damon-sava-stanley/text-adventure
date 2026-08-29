@@ -38,11 +38,43 @@ Thing
 
 run :: IO ()
 run = do
+    inMemoryInstallationRetainsSchemaAndSeeds
+    inMemoryStoreRecoversAfterRollback
     freshInstallationCreatesSchemaAndSeeds
     installationCanRepeatWithoutDuplicateSeeds
     foreignKeysAreEnforced
     committedDataSurvivesReopening
     failedTransactionsRollBack
+
+inMemoryInstallationRetainsSchemaAndSeeds :: IO ()
+inMemoryInstallationRetainsSchemaAndSeeds =
+    withSqliteStore (Text.pack ":memory:") $ \store -> do
+        install store worldOntology
+
+        kitchen <- atomically store $ queryInside store $ getBy (UniqueRoomName (Text.pack "Kitchen"))
+
+        assert
+            "an in-memory store retains seed data after installation"
+            ((entityVal <$> kitchen) == Just (Room (Text.pack "Kitchen")))
+
+inMemoryStoreRecoversAfterRollback :: IO ()
+inMemoryStoreRecoversAfterRollback =
+    withSqliteStore (Text.pack ":memory:") $ \store -> do
+        install store worldOntology
+
+        result <-
+            try
+                ( atomically store $ do
+                    insert_ (Room (Text.pack "Observatory"))
+                    liftIO $ throwIO ExpectedFailure
+                ) ::
+                IO (Either ExpectedFailure ())
+        observatory <- atomically store $ queryInside store $ getBy (UniqueRoomName (Text.pack "Observatory"))
+        kitchen <- atomically store $ queryInside store $ getBy (UniqueRoomName (Text.pack "Kitchen"))
+
+        assert "an in-memory transaction propagates its exception" (isLeft result)
+        assert "an in-memory transaction rolls back writes before an exception" (isNothing observatory)
+        assert "the same in-memory connection remains usable after rollback" (isJust kitchen)
 
 freshInstallationCreatesSchemaAndSeeds :: IO ()
 freshInstallationCreatesSchemaAndSeeds =

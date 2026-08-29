@@ -18,11 +18,11 @@ main = do
             exitFailure
 
 runGame :: FilePath -> IO ()
-runGame databasePath = do
-    let store = sqliteStore (Text.pack databasePath)
-    installGame store minimalGame
-    TextIO.putStrLn (Text.pack "The Toaster awaits in the Kitchen. Type 'quit' to leave.")
-    consoleLoop store
+runGame databasePath =
+    withSqliteStore (Text.pack databasePath) $ \store -> do
+        installGame store minimalGame
+        TextIO.putStrLn (Text.pack "The Toaster awaits in the Kitchen. Type 'quit' to leave.")
+        consoleLoop store
 
 consoleLoop :: Store IO SqliteQuery SqliteTransaction Ontology -> IO ()
 consoleLoop store = do

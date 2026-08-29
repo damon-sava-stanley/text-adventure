@@ -11,9 +11,23 @@ import TextAdventure
 
 run :: IO ()
 run = do
+    inMemoryTurnsCarryState
     acceptedRejectedAndParseFailedTurnsAreDescribed
     carriedStateSurvivesReopeningAndReinstallation
     descriptionFailureRollsBackTheTurn
+
+inMemoryTurnsCarryState :: IO ()
+inMemoryTurnsCarryState =
+    withSqliteStore (Text.pack ":memory:") $ \store -> do
+        installGame store minimalGame
+
+        taken <- runTurn store minimalGame (input "take toaster")
+        alreadyCarried <- runTurn store minimalGame (input "take toaster")
+
+        assert "the first in-memory turn updates the world" (taken == Text.pack "You take the Toaster.")
+        assert
+            "a later in-memory turn sees the updated world"
+            (alreadyCarried == Text.pack "You are already carrying the Toaster.")
 
 acceptedRejectedAndParseFailedTurnsAreDescribed :: IO ()
 acceptedRejectedAndParseFailedTurnsAreDescribed =
