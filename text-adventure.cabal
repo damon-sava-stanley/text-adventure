@@ -6,13 +6,21 @@ build-type:         Simple
 
 common warnings
   default-language: GHC2021
+  default-extensions:
+      GADTs
+    , RankNTypes
   ghc-options:      -Wall
 
 library
   import:          warnings
-  exposed-modules: TextAdventure
+  exposed-modules:
+      TextAdventure
+    , TextAdventure.Core
+    , TextAdventure.Ontology
   hs-source-dirs:  lib
-  build-depends:   base >=4.18 && <5
+  build-depends:
+      base >=4.18 && <5
+    , text
 
 executable text-adventure
   import:         warnings
@@ -20,6 +28,7 @@ executable text-adventure
   hs-source-dirs: app
   build-depends:
       base >=4.18 && <5
+    , text
     , text-adventure
 
 test-suite text-adventure-test
@@ -29,4 +38,5 @@ test-suite text-adventure-test
   hs-source-dirs: test
   build-depends:
       base >=4.18 && <5
+    , text
     , text-adventure

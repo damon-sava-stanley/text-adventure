@@ -8,9 +8,11 @@ and describing the outcome. SQLite is intended to provide the authoritative
 world state and save format. The early design notes live in
 [`notes/rough_thoughts.md`](notes/rough_thoughts.md).
 
-This repository is currently only a project skeleton. It contains a small
-library, a Hello World executable, and a smoke test so the build is known to be
-wired together correctly; none of the engine design has been implemented yet.
+The library currently defines the foundational structure of that design: the
+generic turn pipeline and store boundary in `TextAdventure.Core`, plus the typed
+schema vocabulary in `TextAdventure.Ontology`. `TextAdventure` re-exports both
+modules as a convenient public entry point. Runtime engine behavior and SQLite
+integration have not been implemented yet.
 
 ## Development
 
