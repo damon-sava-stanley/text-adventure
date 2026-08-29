@@ -9,7 +9,36 @@ import TextAdventure
 main :: IO ()
 main = do
     coreTypesCanBeConstructed
+    handledZeroEventCommandsRetainIntent
     PersistentStoreSpec.run
+
+data Command
+    = Look
+    | Wait
+
+handledZeroEventCommandsRetainIntent :: IO ()
+handledZeroEventCommandsRetainIntent = do
+    let look = Handled Look (Accepted [])
+        wait = Handled Wait (Accepted [])
+    assert
+        "handled zero-event commands can be described differently"
+        ( runIdentity (describe commandAwareGame look) == Text.pack "You look around."
+            && runIdentity (describe commandAwareGame wait) == Text.pack "Time passes."
+        )
+
+commandAwareGame :: Game () Identity Identity Command Text Text Text Text
+commandAwareGame =
+    Game
+        { ontology = ()
+        , parse = const (pure (Right Look))
+        , decide = const (pure (Accepted []))
+        , apply = const (pure ())
+        , describe = \outcome ->
+            pure $ case outcome of
+                Handled Look (Accepted []) -> Text.pack "You look around."
+                Handled Wait (Accepted []) -> Text.pack "Time passes."
+                _ -> Text.pack "Something else happened."
+        }
 
 coreTypesCanBeConstructed :: IO ()
 coreTypesCanBeConstructed = do
@@ -17,13 +46,21 @@ coreTypesCanBeConstructed = do
         accepted = Accepted [Text.pack "toaster taken"]
         rejected = Rejected (Text.pack "no toaster here")
         parsed = ParseFailed (Text.pack "not understood")
-        handled = Handled accepted
+        acceptedOutcome = Handled (Text.pack "take toaster") accepted
+        rejectedOutcome = Handled (Text.pack "take toaster") rejected
         game = exampleGame
         store = identityStore
     assert "raw input retains its text" (rawInputText input == Text.pack "take toaster")
     assert "accepted decisions retain events" (eventCount accepted == 1)
     assert "rejected decisions can be handled" (isRejected rejected)
-    assert "parse failures are distinct from handled turns" (isParseFailure parsed && not (isParseFailure handled))
+    assert
+        "accepted and rejected outcomes retain their handled command"
+        ( handledCommand acceptedOutcome == Just (Text.pack "take toaster")
+            && handledCommand rejectedOutcome == Just (Text.pack "take toaster")
+        )
+    assert
+        "parse failures are distinct and have no command"
+        (isParseFailure parsed && not (hasCommand parsed) && not (isParseFailure acceptedOutcome))
     assert "game parsers can be consumed" (runIdentity (parse game input) == Right (Text.pack "take toaster"))
     assert "stores execute polymorphic transactions" (runIdentity (atomically store (Identity 42)) == (42 :: Int))
 
@@ -56,9 +93,17 @@ isRejected :: Decision rejection event -> Bool
 isRejected (Rejected _) = True
 isRejected (Accepted _) = False
 
-isParseFailure :: TurnOutcome parseFailure rejection event -> Bool
+isParseFailure :: TurnOutcome parseFailure command rejection event -> Bool
 isParseFailure (ParseFailed _) = True
-isParseFailure (Handled _) = False
+isParseFailure (Handled _ _) = False
+
+handledCommand :: TurnOutcome parseFailure command rejection event -> Maybe command
+handledCommand (ParseFailed _) = Nothing
+handledCommand (Handled command _) = Just command
+
+hasCommand :: TurnOutcome parseFailure command rejection event -> Bool
+hasCommand (ParseFailed _) = False
+hasCommand (Handled _ _) = True
 
 assert :: String -> Bool -> IO ()
 assert _ True = pure ()
