@@ -24,6 +24,21 @@ migrations, and CRUD queries. Esqueleto is included for richer relational
 queries. The rationale and save-migration caveat are recorded in
 [`ADR 0001`](docs/decisions/0001-use-persistent.md).
 
+SQLite-backed applications should scope their store with `withSqliteStore`:
+
+```haskell
+withSqliteStore database $ \store -> do
+    installGame store game
+    runTurn store game input
+```
+
+The scope retains one connection, closes it on normal or exceptional exit, and
+supports both file paths and literal `:memory:` databases. Store operations are
+serialized: callers may use the store from multiple threads, but each install
+or transaction completes before the next begins. The older `sqliteStore`
+constructor remains available for file-backed compatibility; because it opens
+a connection per operation, it does not support literal `:memory:`.
+
 A playable SQLite-backed game is available in the [examples](examples)
 directory.
 
